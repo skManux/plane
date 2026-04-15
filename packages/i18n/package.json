@@ -14,7 +14,10 @@
   },
   "scripts": {
     "dev": "tsdown --watch --no-clean",
-    "build": "tsdown",
+    "build": "pnpm run generate:types && tsdown",
+    "generate:types": "npx tsx@4.19.2 scripts/generate-types.ts",
+    "sync:check": "npx tsx@4.19.2 scripts/sync-check.ts",
+    "check:sync": "npx tsx@4.19.2 scripts/sync-check.ts --ci",
     "check:lint": "oxlint --max-warnings=2 .",
     "check:types": "tsc --noEmit",
     "check:format": "oxfmt --check .",
@@ -23,16 +26,14 @@
     "clean": "rm -rf .turbo && rm -rf .next && rm -rf node_modules && rm -rf dist"
   },
   "dependencies": {
-    "@plane/utils": "workspace:*",
-    "intl-messageformat": "^10.7.11",
-    "lodash-es": "catalog:",
-    "mobx": "catalog:",
-    "mobx-react": "catalog:",
-    "react": "catalog:"
+    "i18next": "catalog:",
+    "i18next-icu": "catalog:",
+    "i18next-resources-to-backend": "catalog:",
+    "react": "catalog:",
+    "react-i18next": "catalog:"
   },
   "devDependencies": {
     "@plane/typescript-config": "workspace:*",
-    "@types/lodash-es": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "tsdown": "catalog:",
