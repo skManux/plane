@@ -58,7 +58,8 @@ class OIDCOAuthProvider(OauthAdapter):
             )
 
         if redirect_uri is None:
-            redirect_uri = f"{'https' if request.is_secure() else 'http'}://{request.get_host()}/auth/oidc/callback/"
+            from plane.authentication.utils.host import base_host
+            redirect_uri = base_host(request=request, is_app=True).rstrip("/") + "/auth/oidc/callback/"
         url_params = {
             "client_id": OIDC_CLIENT_ID,
             "scope": self.scope,
