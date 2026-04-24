@@ -135,6 +135,17 @@ export function InstanceOIDCConfigForm(props: Props) {
         </>
       ),
     },
+    {
+      key: "Admin_Callback_URI",
+      label: "Admin callback URI",
+      url: `${originURL}/api/instances/admins/oidc/callback/`,
+      description: (
+        <>
+          Required if you want to log in to god-mode via OIDC. Add this alongside the regular callback URI in your
+          provider&apos;s <CodeBlock darkerShade>Authorized Redirect URIs</CodeBlock>.
+        </>
+      ),
+    },
   ];
 
   const onSubmit = async (formData: OIDCConfigFormValues) => {
