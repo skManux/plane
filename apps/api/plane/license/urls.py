@@ -18,6 +18,8 @@ from plane.license.api.views import (
     InstanceAdminUserSessionEndpoint,
     InstanceWorkSpaceAvailabilityCheckEndpoint,
     InstanceWorkSpaceEndpoint,
+    InstanceAdminOIDCInitiateEndpoint,
+    InstanceAdminOIDCCallbackEndpoint,
 )
 
 urlpatterns = [
@@ -71,4 +73,7 @@ urlpatterns = [
         name="instance-workspace-availability",
     ),
     path("workspaces/", InstanceWorkSpaceEndpoint.as_view(), name="instance-workspace"),
+    ## OIDC admin login
+    path("admins/oidc/", InstanceAdminOIDCInitiateEndpoint.as_view(), name="instance-admin-oidc-initiate"),
+    path("admins/oidc/callback/", InstanceAdminOIDCCallbackEndpoint.as_view(), name="instance-admin-oidc-callback"),
 ]

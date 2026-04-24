@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 // plane internal packages
 import type { EAdminAuthErrorCodes, TAdminAuthErrorInfo } from "@plane/constants";
 import { API_BASE_URL } from "@plane/constants";
@@ -15,6 +15,8 @@ import { AuthService } from "@plane/services";
 import { Input, Spinner } from "@plane/ui";
 // components
 import { Banner } from "@/components/common/banner";
+// hooks
+import { useInstance } from "@/hooks/store";
 // local components
 import { FormHeader } from "@/components/instance/form-header";
 import { AuthBanner } from "./auth-banner";
@@ -50,6 +52,8 @@ const defaultFromData: TFormData = {
 };
 
 export function InstanceSignInForm() {
+  // store
+  const { config } = useInstance();
   // search params
   const searchParams = useSearchParams();
   const emailParam = searchParams.get("email") || undefined;
@@ -192,6 +196,26 @@ export function InstanceSignInForm() {
               </Button>
             </div>
           </form>
+          {config?.is_oidc_enabled && (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 border-t border-custom-border-200" />
+                <span className="text-xs text-custom-text-300">or</span>
+                <div className="flex-1 border-t border-custom-border-200" />
+              </div>
+              <a
+                href={`${API_BASE_URL}/api/instances/admins/oidc/`}
+                className="flex items-center justify-center gap-2 w-full rounded border border-custom-border-200 py-2.5 text-sm font-medium text-custom-text-200 hover:bg-custom-background-90 transition-colors"
+              >
+                {config.oidc_logo_url ? (
+                  <img src={config.oidc_logo_url} height={18} width={18} alt="SSO" />
+                ) : (
+                  <ShieldCheck className="h-[18px] w-[18px]" />
+                )}
+                {config.oidc_button_text || "Sign in with SSO"}
+              </a>
+            </>
+          )}
         </div>
       </div>
     </>

@@ -7,6 +7,9 @@ from urllib.parse import urlencode, urljoin
 import uuid
 from zxcvbn import zxcvbn
 
+# Django imports (additional)
+from django.conf import settings
+
 # Django imports
 from django.http import HttpResponseRedirect
 from django.views import View
@@ -33,6 +36,7 @@ from plane.db.models import User, Profile
 from plane.utils.cache import cache_response, invalidate_cache
 from plane.authentication.utils.login import user_login
 from plane.authentication.utils.host import base_host, user_ip
+from plane.authentication.provider.oauth.oidc import OIDCOAuthProvider
 from plane.authentication.adapter.error import (
     AUTHENTICATION_ERROR_CODES,
     AuthenticationException,
@@ -395,4 +399,88 @@ class InstanceAdminSignOutEndpoint(View):
             return HttpResponseRedirect(url)
         except Exception:
             url = get_safe_redirect_url(base_url=base_host(request=request, is_admin=True), next_path="")
+            return HttpResponseRedirect(url)
+
+
+def _admin_oidc_redirect_uri(request):
+    app_base = (getattr(settings, "APP_BASE_URL", None) or getattr(settings, "WEB_URL", "")).rstrip("/")
+    return f"{app_base}/api/instances/admins/oidc/callback/"
+
+
+class InstanceAdminOIDCInitiateEndpoint(View):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        instance = Instance.objects.first()
+        if instance is None or not instance.is_setup_done:
+            exc = AuthenticationException(
+                error_code=AUTHENTICATION_ERROR_CODES["INSTANCE_NOT_CONFIGURED"],
+                error_message="INSTANCE_NOT_CONFIGURED",
+            )
+            url = urljoin(base_host(request=request, is_admin=True), "?" + urlencode(exc.get_error_dict()))
+            return HttpResponseRedirect(url)
+
+        try:
+            state = uuid.uuid4().hex
+            redirect_uri = _admin_oidc_redirect_uri(request)
+            provider = OIDCOAuthProvider(request=request, state=state, redirect_uri=redirect_uri)
+            request.session["state"] = state
+            auth_url = provider.get_auth_url()
+            return HttpResponseRedirect(auth_url)
+        except AuthenticationException as e:
+            url = urljoin(base_host(request=request, is_admin=True), "?" + urlencode(e.get_error_dict()))
+            return HttpResponseRedirect(url)
+
+
+class InstanceAdminOIDCCallbackEndpoint(View):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        code = request.GET.get("code")
+        state = request.GET.get("state")
+
+        if state != request.session.get("state", ""):
+            exc = AuthenticationException(
+                error_code=AUTHENTICATION_ERROR_CODES["OIDC_PROVIDER_ERROR"],
+                error_message="OIDC_PROVIDER_ERROR",
+            )
+            url = urljoin(base_host(request=request, is_admin=True), "?" + urlencode(exc.get_error_dict()))
+            return HttpResponseRedirect(url)
+
+        if not code:
+            exc = AuthenticationException(
+                error_code=AUTHENTICATION_ERROR_CODES["OIDC_PROVIDER_ERROR"],
+                error_message="OIDC_PROVIDER_ERROR",
+            )
+            url = urljoin(base_host(request=request, is_admin=True), "?" + urlencode(exc.get_error_dict()))
+            return HttpResponseRedirect(url)
+
+        instance = Instance.objects.first()
+
+        try:
+            redirect_uri = _admin_oidc_redirect_uri(request)
+            provider = OIDCOAuthProvider(request=request, code=code, redirect_uri=redirect_uri)
+            user = provider.authenticate()
+
+            if not InstanceAdmin.objects.filter(instance=instance, user=user).exists():
+                exc = AuthenticationException(
+                    error_code=AUTHENTICATION_ERROR_CODES["ADMIN_AUTHENTICATION_FAILED"],
+                    error_message="ADMIN_AUTHENTICATION_FAILED",
+                )
+                url = urljoin(base_host(request=request, is_admin=True), "?" + urlencode(exc.get_error_dict()))
+                return HttpResponseRedirect(url)
+
+            user.is_active = True
+            user.last_active = timezone.now()
+            user.last_login_time = timezone.now()
+            user.last_login_ip = get_client_ip(request=request)
+            user.last_login_uagent = request.META.get("HTTP_USER_AGENT")
+            user.token_updated_at = timezone.now()
+            user.save()
+
+            user_login(request=request, user=user, is_admin=True)
+            url = urljoin(base_host(request=request, is_admin=True), "general/")
+            return HttpResponseRedirect(url)
+        except AuthenticationException as e:
+            url = urljoin(base_host(request=request, is_admin=True), "?" + urlencode(e.get_error_dict()))
             return HttpResponseRedirect(url)

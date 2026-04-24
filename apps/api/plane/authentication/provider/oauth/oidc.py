@@ -21,7 +21,7 @@ class OIDCOAuthProvider(OauthAdapter):
     provider = "oidc"
     scope = "openid email profile"
 
-    def __init__(self, request, code=None, state=None, callback=None):
+    def __init__(self, request, code=None, state=None, callback=None, redirect_uri=None):
         (OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, OIDC_DISCOVERY_URL) = get_configuration_value(
             [
                 {"key": "OIDC_CLIENT_ID", "default": os.environ.get("OIDC_CLIENT_ID")},
@@ -57,7 +57,8 @@ class OIDCOAuthProvider(OauthAdapter):
                 error_message="OIDC_PROVIDER_ERROR: Incomplete discovery document",
             )
 
-        redirect_uri = f"{'https' if request.is_secure() else 'http'}://{request.get_host()}/auth/oidc/callback/"
+        if redirect_uri is None:
+            redirect_uri = f"{'https' if request.is_secure() else 'http'}://{request.get_host()}/auth/oidc/callback/"
         url_params = {
             "client_id": OIDC_CLIENT_ID,
             "scope": self.scope,
