@@ -677,7 +677,7 @@ export const PLANS_COMPARISON_LIST: TPlansComparisonDetails[] = [
         description: "Number of seats that can use project and work management features",
         selfHostedDescription: "Number of users that our standard infra supports\nIncrease infra to get more users",
         cloud: {
-          free: "12",
+          free: "Unlimited",
           one: "",
           pro: "Unlimited",
           business: "Unlimited",
@@ -1301,7 +1301,7 @@ export const PLANE_PLANS: PlanePlans = {
     },
   },
   planHighlights: {
-    free: ["Upto 12 users", "Pages", "Unlimited projects", "Unlimited cycles and modules"],
+    free: ["Unlimited users", "Pages", "Unlimited projects", "Unlimited cycles and modules"],
     one: ["Upto 50 users", "OIDC and SAML", "Active cycles", "Limited time tracking"],
     pro: ["Unlimited users", "Custom work items + Properties", "Work item templates", "Full Time Tracking"],
     business: ["RBAC", "Project Templates", "Baselines And Deviations", "Custom Reports"],
